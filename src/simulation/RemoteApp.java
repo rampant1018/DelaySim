@@ -1,23 +1,30 @@
 package simulation;
 
 import java.io.*;
-import java.net.Socket;
+import java.net.*;
 import java.util.TimerTask;
 
+import jlibrtp.*;
+
 public class RemoteApp {
-	static final String hostName = "127.0.0.1";
+	static final String hostname = "127.0.0.1";
 	static final int portNumber = 5678;
+	static final int rtpLocalPortNumber = 16384; // local site
+	static final int rtpRemotePortNumber = 16386; // remote site(this app)	
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
+		SceneSender ss = new SceneSender(hostname, rtpLocalPortNumber, rtpRemotePortNumber);
 		ObjectScene os = new ObjectScene();
+		
+		// periodic timer: position sender
 		
 		// tcp listener: command receiver
 		try {
-			Socket commandSocket = new Socket(hostName, portNumber);
+			Socket commandSocket = new Socket(hostname, portNumber);
 			BufferedReader commandReader = new BufferedReader(new InputStreamReader(commandSocket.getInputStream()));
-			
+						
 			while(true) {
 				String input = commandReader.readLine();
 				System.out.println(input);
@@ -25,24 +32,19 @@ public class RemoteApp {
 					break;
 				}
 				
-				os.changeDirection(input);			
-				System.out.println(Integer.toHexString(os.getDirection()));
+				ss.sendData(input.getBytes());
+				os.changeDirection(input);
 			}
 			System.out.println("close connection");
 			
+			ss.close();
 			os.close();
 			commandReader.close();
 			commandSocket.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		
-		
-		// periodic timer: update object position
-		// periodic timer: position sender
 	}
-
-
 }
 
 class ObjectScene {
@@ -56,9 +58,9 @@ class ObjectScene {
 	static final int LEFT_BOUND = 0;
 	static final int RIGHT_BOUND = 1000;
 	static final int UP_BOUND = 0;
-	static final int DOWN_BOUND = 1000;
+	static final int DOWN_BOUND = 1000;	
 	
-	
+	// Direction constants
 	static final int LEFT = 0x01;
 	static final int RIGHT = 0x02;
 	static final int UP = 0x10;
@@ -151,9 +153,65 @@ class ObjectScene {
 			else if(direction == DOWN && posY + step_length <= RIGHT_BOUND) {
 				posY += step_length;
 			}
-			
-			System.out.println(posX + ", " + posY);
 		}
 	}
 }
 
+class SceneSender implements RTPAppIntf {
+	/** Holds a RTPSession instance */
+	DatagramSocket rtpSocket = null;
+	DatagramSocket rtcpSocket = null;
+	RTPSession rtpSession = null;
+	
+	/** A minimal constructor */
+	public SceneSender(String hostname, int rtpLocalPortNumber, int rtpRemotePortNumber) {
+		System.out.print("Initializing rtp session ... ");
+		
+		try {
+			rtpSocket = new DatagramSocket(rtpRemotePortNumber);
+			rtcpSocket = new DatagramSocket(rtpRemotePortNumber + 1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		rtpSession = new RTPSession(rtpSocket, rtcpSocket);		
+		Participant part = new Participant(hostname, rtpLocalPortNumber, rtpLocalPortNumber + 1);
+		rtpSession.addParticipant(part);
+		
+		rtpSession.RTPSessionRegister(this, null, null);
+		try{ Thread.sleep(5000); } catch(Exception e) {}
+		
+		System.out.println("done");
+	}
+	
+	public SceneSender(RTPSession rtpSession) {
+		this.rtpSession = rtpSession;
+	}
+	
+	@Override
+	public void receiveData(DataFrame frame, Participant participant) {
+		// TODO Auto-generated method stub
+		byte[] data = frame.getConcatenatedData();
+		System.out.println("RTP received: " + new String(data));
+	}
+
+	@Override
+	public void userEvent(int type, Participant[] participant) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int frameSize(int payloadType) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
+	public void sendData(byte[] data) {
+		rtpSession.sendData(data);
+	}
+	
+	public void close() {
+		rtpSession.endSession();
+	}
+}
