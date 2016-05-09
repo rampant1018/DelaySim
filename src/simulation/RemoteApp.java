@@ -2,6 +2,8 @@ package simulation;
 
 import java.io.*;
 import java.net.*;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.TimerTask;
 
 import jlibrtp.*;
@@ -10,7 +12,10 @@ public class RemoteApp {
 	static final String hostname = "127.0.0.1";
 	static final int portNumber = 5678;
 	static final int rtpLocalPortNumber = 16384; // local site
-	static final int rtpRemotePortNumber = 16386; // remote site(this app)	
+	static final int rtpRemotePortNumber = 16386; // remote site(this app)
+	
+	static final int positionSendingPeriod = 5;
+	static final int positionSendingDelay = 500 / positionSendingPeriod; // position feedback delay (ms)
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -21,7 +26,7 @@ public class RemoteApp {
 		// periodic timer: position sender
 		PositionSendingTask pst = new PositionSendingTask(ss, os);
 		java.util.Timer timer = new java.util.Timer();
-		timer.scheduleAtFixedRate(pst, 0, 5);
+		timer.scheduleAtFixedRate(pst, 0, positionSendingPeriod);
 		
 		// tcp listener: command receiver
 		try {
@@ -53,16 +58,27 @@ public class RemoteApp {
 		SceneSender ss;
 		ObjectScene os;
 		
+		int delayStep = positionSendingDelay;
+		Queue<String> buffer = null;
+		
 		public PositionSendingTask(SceneSender ss, ObjectScene os) {
 			this.ss = ss;
 			this.os = os;
+			
+			buffer = new LinkedList<>();
 		}
 		
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
 			String coord = Integer.toString(os.getPosX());
-			ss.sendData(coord.getBytes());
+			buffer.add(coord);
+			if(delayStep > 0) {
+				delayStep--;
+			}
+			else {
+				ss.sendData(buffer.poll().getBytes());
+			}
 		}
 	}
 }

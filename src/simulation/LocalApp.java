@@ -1,8 +1,6 @@
 package simulation;
 
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.io.*;
@@ -47,11 +45,11 @@ public class LocalApp {
 			}
 			System.out.println("closed connection");
 			
-			lgui.close();
 			sr.close();
 			commandWriter.close();
 			commandSocket.close();
 			commandSvrSocket.close();
+			lgui.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -99,6 +97,7 @@ class SceneReceiver implements RTPAppIntf {
 		
 		rtpSession = new RTPSession(rtpSocket, rtcpSocket);		
 		Participant part = new Participant(hostname, rtpRemotePortNumber, rtpRemotePortNumber + 1);
+		//Participant part = new Participant("192.168.1.56", rtpRemotePortNumber, rtpRemotePortNumber + 1);
 		rtpSession.addParticipant(part);
 		
 		rtpSession.RTPSessionRegister(this, null, null);
@@ -120,7 +119,6 @@ class SceneReceiver implements RTPAppIntf {
 		byte[] data = frame.getConcatenatedData();
 		String strPos = new String(data);
 		object.setPosX(Integer.parseInt(strPos));
-		//System.out.println("RTP received: " + new String(data));
 	}
 
 	@Override
