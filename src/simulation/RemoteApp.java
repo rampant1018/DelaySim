@@ -19,6 +19,9 @@ public class RemoteApp {
 		ObjectScene os = new ObjectScene();
 		
 		// periodic timer: position sender
+		PositionSendingTask pst = new PositionSendingTask(ss, os);
+		java.util.Timer timer = new java.util.Timer();
+		timer.scheduleAtFixedRate(pst, 0, 5);
 		
 		// tcp listener: command receiver
 		try {
@@ -28,21 +31,38 @@ public class RemoteApp {
 			while(true) {
 				String input = commandReader.readLine();
 				System.out.println(input);
+				
 				if(input.equals("exit")) {
 					break;
 				}
-				
-				ss.sendData(input.getBytes());
 				os.changeDirection(input);
 			}
 			System.out.println("close connection");
 			
+			timer.cancel();
 			ss.close();
 			os.close();
 			commandReader.close();
 			commandSocket.close();
 		} catch(Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	static class PositionSendingTask extends TimerTask {
+		SceneSender ss;
+		ObjectScene os;
+		
+		public PositionSendingTask(SceneSender ss, ObjectScene os) {
+			this.ss = ss;
+			this.os = os;
+		}
+		
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			String coord = Integer.toString(os.getPosX());
+			ss.sendData(coord.getBytes());
 		}
 	}
 }
