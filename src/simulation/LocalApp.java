@@ -1,14 +1,7 @@
 package simulation;
 
-import java.awt.Dimension;
-import java.awt.event.KeyListener;
-import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.*;
-import java.util.TimerTask;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 import jlibrtp.*;
 
@@ -139,99 +132,5 @@ class SceneReceiver implements RTPAppIntf {
 	
 	public void close() {
 		rtpSession.endSession();
-	}
-}
-
-class LocalGUI {
-	Object object;
-	PrintWriter commandSender;
-	
-	JFrame frame;
-	JLabel label;
-	java.util.Timer positionUpdatingTimer = null;
-	
-	public LocalGUI(Object object, PrintWriter commandSender) {
-		this.object = object;
-		this.commandSender = commandSender;
-		
-		createAndShowGUI();
-		
-		TimerTask positionUpdatingTask = new TimerTask() {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				label.setText(Integer.toString(object.getPosX()));
-			}
-		};
-		positionUpdatingTimer = new java.util.Timer();
-		positionUpdatingTimer.scheduleAtFixedRate(positionUpdatingTask, 0, 5);
-		
-		frame.addKeyListener(new MyKeyListener());
-	}
-	
-	public void close() {
-		positionUpdatingTimer.cancel();
-		frame.dispose();
-	}
-	
-	private void createAndShowGUI() {
-		frame = new JFrame("LocalApp");
-		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		
-		label = new JLabel();
-		label.setText(Integer.toString(object.getPosX()));
-		label.setPreferredSize(new Dimension(200, 200));
-		frame.add(label);
-		
-		frame.pack();
-		frame.setVisible(true);
-	}
-	
-	class MyKeyListener implements KeyListener {
-		@Override
-		public void keyTyped(KeyEvent e) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void keyPressed(KeyEvent e) {
-			// TODO Auto-generated method stub
-			switch(e.getKeyCode()) {
-			case KeyEvent.VK_W:
-				commandSender.println("UpOn");
-				break;
-			case KeyEvent.VK_S:
-				commandSender.println("DownOn");
-				break;
-			case KeyEvent.VK_A:
-				commandSender.println("LeftOn");
-				break;
-			case KeyEvent.VK_D:
-				commandSender.println("RightOn");
-				break;
-			}
-			commandSender.flush();
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e) {
-			// TODO Auto-generated method stub
-			switch(e.getKeyCode()) {
-			case KeyEvent.VK_W:
-				commandSender.println("UpOff");
-				break;
-			case KeyEvent.VK_S:
-				commandSender.println("DownOff");
-				break;
-			case KeyEvent.VK_A:
-				commandSender.println("LeftOff");
-				break;
-			case KeyEvent.VK_D:
-				commandSender.println("RightOff");
-				break;
-			}
-			commandSender.flush();
-		}
 	}
 }
