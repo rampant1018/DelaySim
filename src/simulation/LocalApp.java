@@ -39,7 +39,7 @@ public class LocalApp {
 				String input = stdIn.readLine();
 				commandWriter.println(input);
 				commandWriter.flush();
-				if(input.equals("exit\n")) {
+				if(input.equals("exit")) {
 					break;
 				}				
 			}
@@ -53,6 +53,10 @@ public class LocalApp {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		try{ Thread.sleep(2000); } catch(Exception e) {} // wait to release all resource
+		
+		System.out.println("Program exit");
 	}
 }
 
