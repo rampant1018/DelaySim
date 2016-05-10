@@ -4,22 +4,23 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.PrintWriter;
 import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
 
-public class LocalGUI {
+public class LocalGUI extends JFrame implements ActionListener {
 	Object object;
 	PrintWriter commandSender;
 	
-	JFrame frame;
 	JLabel label;
 	java.util.Timer positionUpdatingTimer = null;
 	
@@ -52,34 +53,35 @@ public class LocalGUI {
 	
 	public void close() {
 		positionUpdatingTimer.cancel();
-		frame.setVisible(false);
-		frame.dispose();
+		setVisible(false);
+		dispose();
 	}
 	
 	private void createAndShowGUI() {
-		frame = new JFrame("LocalApp");
-		frame.setResizable(false);
-		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		setTitle("LocalApp");
+		setResizable(false);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
 		// Layout setting
 		FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 10, 10);
-		frame.setLayout(layout);
+		setLayout(layout);
 		
 		// Object drawing panel
 		osp = new ObjectScenePanel();
-		frame.add(osp);
+		add(osp);
 		
 		// Elapsed timer label
 		etl = new ElapsedTimerLabel();
 		frame.add(etl);
 		
-		label = new JLabel();
-		label.setText(Integer.toString(object.getPosX()));
-		label.setPreferredSize(new Dimension(200, 200));
-		frame.add(label);
+		// Destination generate button
+		JButton btn = new JButton("Generate Destination");
+		btn.setActionCommand("generate destination");
+		btn.addActionListener(this);
+		add(btn);
 		
-		frame.pack();
-		frame.setVisible(true);
+		pack();
+		setVisible(true);
 	}
 	
 	class ObjectScenePanel extends JPanel {
