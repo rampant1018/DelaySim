@@ -25,6 +25,7 @@ public class LocalGUI {
 	
 	JPanel objPanel;
 	ObjectScenePanel osp;
+	ElapsedTimerLabel etl;
 	
 	// frame per second
 	static final int fps = 50;
@@ -68,6 +69,10 @@ public class LocalGUI {
 		osp = new ObjectScenePanel();
 		frame.add(osp);
 		
+		// Elapsed timer label
+		etl = new ElapsedTimerLabel();
+		frame.add(etl);
+		
 		label = new JLabel();
 		label.setText(Integer.toString(object.getPosX()));
 		label.setPreferredSize(new Dimension(200, 200));
@@ -101,11 +106,54 @@ public class LocalGUI {
 		}
 	}
 	
+	class ElapsedTimerLabel extends JLabel {
+		long startTime;
+		boolean stateRunning;
+		
+		public ElapsedTimerLabel() {
+			setBorder(BorderFactory.createLineBorder(Color.BLACK));
+			setPreferredSize(new Dimension(200, 100));
+			
+			stateRunning = false;
+		}
+		
+		public void start() {
+			if(!stateRunning) {
+				startTime = System.currentTimeMillis();
+				stateRunning = true;
+				new Thread(new ElapsedTimerUpdatingTask()).start();
+			}
+		}
+		
+		public void stop() {
+			if(stateRunning) {
+				stateRunning = false;
+			}
+		}
+		
+		class ElapsedTimerUpdatingTask implements Runnable {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				while(true) {
+					if(!stateRunning) {
+						return;
+					}
+					
+					long currentTime = System.currentTimeMillis();
+					long diffTime = currentTime - startTime;
+					long second = diffTime / 1000;
+					long millsecond = diffTime % 1000;
+					setText(second + "." + millsecond + " sec");
+				}
+			}
+		}
+	}
+	
 	class ControlListener implements KeyListener {
 		@Override
 		public void keyTyped(KeyEvent e) {
 			// TODO Auto-generated method stub
-			
 		}
 
 		@Override
@@ -123,6 +171,12 @@ public class LocalGUI {
 				break;
 			case KeyEvent.VK_D:
 				commandSender.println("cd RightOn");
+				break;
+			case KeyEvent.VK_O:
+				etl.start();
+				break;
+			case KeyEvent.VK_P:
+				etl.stop();
 				break;
 			}
 			commandSender.flush();
