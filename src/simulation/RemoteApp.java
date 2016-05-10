@@ -152,6 +152,25 @@ class ObjectScene {
 	static final int UP = 0x10;
 	static final int DOWN = 0x20;
 	
+	// Predictor enable flag
+	boolean enableTAP;
+	boolean enableSPP;
+	
+	// Target Area(TA) Predictor variables
+	boolean taRightFlag;
+	boolean taLeftFlag;
+	boolean taTopFlag;
+	boolean taBottomFlag;
+	int taRightBound;
+	int taLeftBound;
+	int taTopBound;
+	int taBottomBound;
+	
+	// Stop Point(SP) Predictor variables
+	boolean spSet;
+	int spPredictedX;
+	int spPredictedY;
+	
 	java.util.Timer sceneUpdatingTimer = null;
 	
 	public ObjectScene() {
@@ -217,6 +236,9 @@ class ObjectScene {
 		step_length = 1;
 		step_period = 10;
 		
+		enableTAP = false;
+		enableSPP = false;
+		
 		// periodic timer: update object position
 		sceneUpdatingTimer = new java.util.Timer();
 		sceneUpdatingTimer.scheduleAtFixedRate(new SceneUpdatingTask(), 0, step_period);
@@ -238,6 +260,10 @@ class ObjectScene {
 			if(!boundaryCheck()) {
 				return;
 			}
+			
+			// Todo: Target Area Predictor
+			
+			// Todo: Stop Point Predictor
 			
 			move();
 		}
