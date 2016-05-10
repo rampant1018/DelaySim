@@ -3,6 +3,7 @@ package simulation;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,6 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 public class LocalGUI extends JFrame implements ActionListener {
 	Object object;
@@ -32,11 +34,13 @@ public class LocalGUI extends JFrame implements ActionListener {
 	
 	// frame per second
 	static final int fps = 50;
+
 	
 	public LocalGUI(Object object, PrintWriter commandSender) {
 		this.object = object;
 		this.commandSender = commandSender;
 		
+		setUIFont (new javax.swing.plaf.FontUIResource("Serif", Font.PLAIN, 20));
 		createAndShowGUI();
 		
 		TimerTask positionUpdatingTask = new TimerTask() {
@@ -61,6 +65,8 @@ public class LocalGUI extends JFrame implements ActionListener {
 		setTitle("LocalApp");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		
+		setFont(new Font("Arial", 0, 20));
 		
 		// Layout setting
 		FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 10, 10);
@@ -332,4 +338,15 @@ public class LocalGUI extends JFrame implements ActionListener {
 			System.out.println("click button");
 		}
 	}
+	
+	private static void setUIFont (javax.swing.plaf.FontUIResource f){
+		java.util.Enumeration keys = UIManager.getDefaults().keys();
+		while (keys.hasMoreElements()) {
+			java.lang.Object key = keys.nextElement();
+			java.lang.Object value = UIManager.get (key);
+			if (value != null && value instanceof javax.swing.plaf.FontUIResource) {
+				UIManager.put (key, f);
+			}
+		}
+	} 
 }
