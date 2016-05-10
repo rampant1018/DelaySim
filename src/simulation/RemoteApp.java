@@ -92,11 +92,16 @@ class ObjectScene {
 	
 	// scene boundary (inclusive)
 	static final int LEFT_BOUND = 0;
-	static final int RIGHT_BOUND = 1000;
-	static final int UP_BOUND = 0;
-	static final int DOWN_BOUND = 1000;	
+	static final int RIGHT_BOUND = 800;
+	static final int TOP_BOUND = 0;
+	static final int BOTTOM_BOUND = 600;
+	
+	// object parameters
+	static final int OBJECT_WIDTH = 20;
+	static final int OBJECT_HEIGHT = 20;
 	
 	// Direction constants
+	static final int STOP = 0x0;
 	static final int LEFT = 0x01;
 	static final int RIGHT = 0x02;
 	static final int UP = 0x10;
@@ -110,7 +115,7 @@ class ObjectScene {
 		posY = 0;
 		direction = 0x0;
 		step_length = 1;
-		step_period = 5;
+		step_period = 20;
 		
 		// periodic timer: update object position
 		sceneUpdatingTimer = new java.util.Timer();
@@ -176,19 +181,45 @@ class ObjectScene {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			if(direction == LEFT && posX - step_length >= LEFT_BOUND) {
+			if(!boundaryCheck()) {
+				return;
+			}
+			
+			move();
+		}
+		
+		void move() {
+			if((direction & LEFT) == LEFT) {
 				posX -= step_length;
 			}
-			else if(direction == RIGHT && posX + step_length <= RIGHT_BOUND) {
+			else if((direction & RIGHT) == RIGHT) {
 				posX += step_length;
 			}
 			
-			if(direction == UP && posY - step_length >= LEFT_BOUND) {
+			if((direction & UP) == UP) {
 				posY -= step_length;
 			}
-			else if(direction == DOWN && posY + step_length <= RIGHT_BOUND) {
+			else if((direction & DOWN) == DOWN) {
 				posY += step_length;
 			}
+		}
+		
+		boolean boundaryCheck() {
+			if((direction & LEFT) == LEFT && posX - step_length >= LEFT_BOUND) {
+				return true;
+			}
+			else if((direction & RIGHT) == RIGHT && posX + step_length <= RIGHT_BOUND - OBJECT_WIDTH) {
+				return true;
+			}
+			
+			if((direction & UP) == UP && posY - step_length >= TOP_BOUND) {
+				return true;
+			}
+			else if((direction & DOWN) == DOWN && posY + step_length <= BOTTOM_BOUND - OBJECT_HEIGHT) {
+				return true;
+			}
+			
+			return false;
 		}
 	}
 }
