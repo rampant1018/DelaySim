@@ -71,7 +71,7 @@ public class RemoteApp {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			String coord = Integer.toString(os.getPosX());
+			String coord = Integer.toString(os.getPosX()) + " " + Integer.toString(os.getPosY());
 			buffer.add(coord);
 			if(delayStep > 0) {
 				delayStep--;

@@ -2,6 +2,7 @@ package simulation;
 
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 import jlibrtp.*;
 
@@ -115,7 +116,10 @@ class SceneReceiver implements RTPAppIntf {
 		// TODO Auto-generated method stub
 		byte[] data = frame.getConcatenatedData();
 		String strPos = new String(data);
-		object.setPosX(Integer.parseInt(strPos));
+		Scanner scanner = new Scanner(strPos);
+		object.setPosX(scanner.nextInt());
+		object.setPosY(scanner.nextInt());
+		scanner.close();
 	}
 
 	@Override
