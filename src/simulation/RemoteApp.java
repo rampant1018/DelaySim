@@ -115,7 +115,7 @@ class ObjectScene {
 		posY = 0;
 		direction = 0x0;
 		step_length = 1;
-		step_period = 20;
+		step_period = 10;
 		
 		// periodic timer: update object position
 		sceneUpdatingTimer = new java.util.Timer();
