@@ -15,21 +15,23 @@ public class RemoteApp {
 	static final int rtpLocalPortNumber = 16384; // local site
 	static final int rtpRemotePortNumber = 16386; // remote site(this app)
 	
-	static final int positionSendingPeriod = 5;
-	static final int positionSendingDelay = 500 / positionSendingPeriod; // position feedback delay (ms)
+	static final int positionSendingPeriod = 10;
+	static final int defaultPositionSendingDelay = 500; // position feedback delay (ms)
 	
+	static java.util.Timer positionSendingTimer = null;
+	static SceneSender ss = null;
 	static ObjectScene os = null;
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		SceneSender ss = new SceneSender(hostname, rtpLocalPortNumber, rtpRemotePortNumber);
-		os = new ObjectScene();
+		ss = new SceneSender(hostname, rtpLocalPortNumber, rtpRemotePortNumber);
 		
-		// periodic timer: position sender
-		PositionSendingTask pst = new PositionSendingTask(ss, os);
-		java.util.Timer timer = new java.util.Timer();
-		timer.scheduleAtFixedRate(pst, 0, positionSendingPeriod);
+		// init object and position sending task
+		os = new ObjectScene();
+		PositionSendingTask pst = new PositionSendingTask(defaultPositionSendingDelay / positionSendingPeriod);
+		positionSendingTimer = new java.util.Timer();
+		positionSendingTimer.scheduleAtFixedRate(pst, 0, positionSendingPeriod);
 		
 		// tcp listener: command receiver
 		try {
@@ -46,7 +48,7 @@ public class RemoteApp {
 			}
 			System.out.println("close connection");
 			
-			timer.cancel();
+			positionSendingTimer.cancel();
 			ss.close();
 			os.close();
 			commandReader.close();
@@ -68,13 +70,32 @@ public class RemoteApp {
 			}
 			
 			if(cmd1.equals("cd") && scanner.hasNext()) { // change direction
-				String arg = scanner.next();
-				os.changeDirection(arg);
+				if(!scanner.hasNext()) {
+					System.out.println("Missing arguments: cd args");
+				}
+				else {
+					String arg = scanner.next();
+					os.changeDirection(arg);
+				}
 			}
-			
-			if(cmd1.equals("restart")) {
-				os.close();
-				os = new ObjectScene();
+			else if(cmd1.equals("restart")) {
+				os.restart();
+			}
+			else if(cmd1.equals("setdelay")) {
+				if(!scanner.hasNextInt()) {
+					System.out.println("Missing arguments: setdelay args");
+				}
+				else {
+					int delay = scanner.nextInt();
+					
+					positionSendingTimer.cancel();
+					PositionSendingTask pst = new PositionSendingTask(delay / positionSendingPeriod);
+					positionSendingTimer = new java.util.Timer();
+					positionSendingTimer.scheduleAtFixedRate(pst, 0, positionSendingPeriod);
+				}
+			}
+			else {
+				System.out.println("Invalid command!");
 			}
 		}
 		
@@ -83,15 +104,11 @@ public class RemoteApp {
 	}
 	
 	static class PositionSendingTask extends TimerTask {
-		SceneSender ss;
-		ObjectScene os;
-		
-		int delayStep = positionSendingDelay;
+		int delay;
 		Queue<String> buffer = null;
 		
-		public PositionSendingTask(SceneSender ss, ObjectScene os) {
-			this.ss = ss;
-			this.os = os;
+		public PositionSendingTask(int delay) {
+			this.delay = delay;
 			
 			buffer = new LinkedList<>();
 		}
@@ -101,8 +118,8 @@ public class RemoteApp {
 			// TODO Auto-generated method stub
 			String coord = Integer.toString(os.getPosX()) + " " + Integer.toString(os.getPosY());
 			buffer.add(coord);
-			if(delayStep > 0) {
-				delayStep--;
+			if(delay > 0) {
+				delay--;
 			}
 			else {
 				ss.sendData(buffer.poll().getBytes());
@@ -138,16 +155,12 @@ class ObjectScene {
 	java.util.Timer sceneUpdatingTimer = null;
 	
 	public ObjectScene() {
-		// object attributes
-		posX = 0;
-		posY = 0;
-		direction = 0x0;
-		step_length = 1;
-		step_period = 10;
-		
-		// periodic timer: update object position
-		sceneUpdatingTimer = new java.util.Timer();
-		sceneUpdatingTimer.scheduleAtFixedRate(new SceneUpdatingTask(), 0, step_period);
+		initialize();
+	}
+	
+	public void restart() {
+		this.close();
+		initialize();
 	}
 	
 	public void close() {
@@ -194,6 +207,19 @@ class ObjectScene {
 		else {
 			System.err.println("ChangeDirection: Invalid command");
 		}
+	}
+	
+	private void initialize() {
+		// object attributes
+		posX = 0;
+		posY = 0;
+		direction = 0x0;
+		step_length = 1;
+		step_period = 10;
+		
+		// periodic timer: update object position
+		sceneUpdatingTimer = new java.util.Timer();
+		sceneUpdatingTimer.scheduleAtFixedRate(new SceneUpdatingTask(), 0, step_period);
 	}
 	
 	private void updateDirection(int d, boolean enable) {
