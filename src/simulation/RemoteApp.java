@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Scanner;
 import java.util.TimerTask;
 
 import jlibrtp.*;
@@ -17,11 +18,13 @@ public class RemoteApp {
 	static final int positionSendingPeriod = 5;
 	static final int positionSendingDelay = 500 / positionSendingPeriod; // position feedback delay (ms)
 	
+	static ObjectScene os = null;
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
 		SceneSender ss = new SceneSender(hostname, rtpLocalPortNumber, rtpRemotePortNumber);
-		ObjectScene os = new ObjectScene();
+		os = new ObjectScene();
 		
 		// periodic timer: position sender
 		PositionSendingTask pst = new PositionSendingTask(ss, os);
@@ -34,13 +37,12 @@ public class RemoteApp {
 			BufferedReader commandReader = new BufferedReader(new InputStreamReader(commandSocket.getInputStream()));
 						
 			while(true) {
-				String input = commandReader.readLine();
-				System.out.println(input);
+				String cmd = commandReader.readLine();
+				System.out.println(cmd);
 				
-				if(input.equals("exit")) {
+				if(!commandProcess(cmd)) {
 					break;
 				}
-				os.changeDirection(input);
 			}
 			System.out.println("close connection");
 			
@@ -52,6 +54,32 @@ public class RemoteApp {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	static boolean commandProcess(String cmd) {
+		Scanner scanner = new Scanner(cmd);
+		
+		if(scanner.hasNext()) {
+			String cmd1 = scanner.next();
+			
+			if(cmd1.equals("exit")) {
+				scanner.close();
+				return false;
+			}
+			
+			if(cmd1.equals("cd") && scanner.hasNext()) { // change direction
+				String arg = scanner.next();
+				os.changeDirection(arg);
+			}
+			
+			if(cmd1.equals("restart")) {
+				os.close();
+				os = new ObjectScene();
+			}
+		}
+		
+		scanner.close();
+		return true;
 	}
 	
 	static class PositionSendingTask extends TimerTask {

@@ -113,16 +113,16 @@ public class LocalGUI {
 			// TODO Auto-generated method stub
 			switch(e.getKeyCode()) {
 			case KeyEvent.VK_W:
-				commandSender.println("UpOn");
+				commandSender.println("cd UpOn");
 				break;
 			case KeyEvent.VK_S:
-				commandSender.println("DownOn");
+				commandSender.println("cd DownOn");
 				break;
 			case KeyEvent.VK_A:
-				commandSender.println("LeftOn");
+				commandSender.println("cd LeftOn");
 				break;
 			case KeyEvent.VK_D:
-				commandSender.println("RightOn");
+				commandSender.println("cd RightOn");
 				break;
 			}
 			commandSender.flush();
@@ -133,16 +133,16 @@ public class LocalGUI {
 			// TODO Auto-generated method stub
 			switch(e.getKeyCode()) {
 			case KeyEvent.VK_W:
-				commandSender.println("UpOff");
+				commandSender.println("cd UpOff");
 				break;
 			case KeyEvent.VK_S:
-				commandSender.println("DownOff");
+				commandSender.println("cd DownOff");
 				break;
 			case KeyEvent.VK_A:
-				commandSender.println("LeftOff");
+				commandSender.println("cd LeftOff");
 				break;
 			case KeyEvent.VK_D:
-				commandSender.println("RightOff");
+				commandSender.println("cd RightOff");
 				break;
 			}
 			commandSender.flush();
