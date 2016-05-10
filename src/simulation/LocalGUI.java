@@ -8,10 +8,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.PrintWriter;
 import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,12 +24,11 @@ public class LocalGUI extends JFrame implements ActionListener {
 	Object object;
 	PrintWriter commandSender;
 	
-	JLabel label;
 	java.util.Timer positionUpdatingTimer = null;
 	
 	JPanel objPanel;
 	ObjectScenePanel osp;
-	ElapsedTimerLabel etl;
+	StatusPanel sp;
 	
 	// frame per second
 	static final int fps = 50;
@@ -41,17 +43,15 @@ public class LocalGUI extends JFrame implements ActionListener {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				label.setText(Integer.toString(object.getPosX()) + ", " + Integer.toString(object.getPosY()));
 				osp.repaint();
 			}
 		};
 		positionUpdatingTimer = new java.util.Timer();
 		positionUpdatingTimer.scheduleAtFixedRate(positionUpdatingTask, 0, 1000 / fps);
-		
-		frame.addKeyListener(new ControlListener());
 	}
 	
 	public void close() {
+		sp.close();
 		positionUpdatingTimer.cancel();
 		setVisible(false);
 		dispose();
@@ -70,9 +70,9 @@ public class LocalGUI extends JFrame implements ActionListener {
 		osp = new ObjectScenePanel();
 		add(osp);
 		
-		// Elapsed timer label
-		etl = new ElapsedTimerLabel();
-		frame.add(etl);
+		// Status panel
+		sp = new StatusPanel();
+		add(sp);
 		
 		// Destination generate button
 		JButton btn = new JButton("Generate Destination");
@@ -84,12 +84,27 @@ public class LocalGUI extends JFrame implements ActionListener {
 		setVisible(true);
 	}
 	
-	class ObjectScenePanel extends JPanel {
+	class ObjectScenePanel extends JPanel implements MouseListener, KeyListener {
 		// panel size
 		static final int WIDTH = 800;
 		static final int HEIGHT = 600;
 		
+		// destination area
+		static final int DA_WIDTH = 50;
+		static final int DA_HEIGHT = 50;
+		boolean daEnable;
+		int daX, daY;
+		
 		public ObjectScenePanel() {
+			daEnable = false; // do not show destination area in the beginning
+			
+			// enable focus on panel
+			setFocusable(true);
+			addMouseListener(this);
+			
+			// control listener
+			addKeyListener(this);
+			
 			setBackground(Color.white);
 			setBorder(BorderFactory.createLineBorder(Color.black));
 		}
@@ -101,59 +116,72 @@ public class LocalGUI extends JFrame implements ActionListener {
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			
+			// paint object
 			g.setColor(Color.RED);
 			g.fillRect(object.getPosX(), object.getPosY(), Object.WIDTH, Object.HEIGHT);
 			g.setColor(Color.BLACK);
 			g.drawRect(object.getPosX(), object.getPosY(), Object.WIDTH, Object.HEIGHT);
-		}
-	}
-	
-	class ElapsedTimerLabel extends JLabel {
-		long startTime;
-		boolean stateRunning;
-		
-		public ElapsedTimerLabel() {
-			setBorder(BorderFactory.createLineBorder(Color.BLACK));
-			setPreferredSize(new Dimension(200, 100));
 			
-			stateRunning = false;
-		}
-		
-		public void start() {
-			if(!stateRunning) {
-				startTime = System.currentTimeMillis();
-				stateRunning = true;
-				new Thread(new ElapsedTimerUpdatingTask()).start();
+			// paint destination area
+			if(daEnable) {
+				g.setColor(Color.CYAN);
+				g.drawRect(daX, daY, DA_WIDTH, DA_HEIGHT);
 			}
 		}
 		
-		public void stop() {
-			if(stateRunning) {
-				stateRunning = false;
-			}
+		public void setDaX(int daX) {
+			this.daX = daX;
 		}
 		
-		class ElapsedTimerUpdatingTask implements Runnable {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				while(true) {
-					if(!stateRunning) {
-						return;
-					}
-					
-					long currentTime = System.currentTimeMillis();
-					long diffTime = currentTime - startTime;
-					long second = diffTime / 1000;
-					long millsecond = diffTime % 1000;
-					setText(second + "." + millsecond + " sec");
-				}
-			}
+		public void setDaY(int daY) {
+			this.daY = daY;
 		}
-	}
-	
-	class ControlListener implements KeyListener {
+		
+		public int getDaX() {
+			return daX;
+		}
+		public int getDaY() {
+			return daY;
+		}
+		
+		public void enableDA() {
+			daEnable = true;
+		}
+		
+		public void disableDA() {
+			daEnable = false;
+		}
+
 		@Override
+		public void mouseClicked(MouseEvent e) {
+			// TODO Auto-generated method stub
+			requestFocusInWindow();
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 		public void keyTyped(KeyEvent e) {
 			// TODO Auto-generated method stub
 		}
@@ -175,10 +203,10 @@ public class LocalGUI extends JFrame implements ActionListener {
 				commandSender.println("cd RightOn");
 				break;
 			case KeyEvent.VK_O:
-				etl.start();
+				sp.etl.start();
 				break;
 			case KeyEvent.VK_P:
-				etl.stop();
+				sp.etl.stop();
 				break;
 			}
 			commandSender.flush();
@@ -202,6 +230,106 @@ public class LocalGUI extends JFrame implements ActionListener {
 				break;
 			}
 			commandSender.flush();
+		}
+	}
+	
+	class StatusPanel extends JPanel {
+		boolean isRunning = true;
+		
+		ElapsedTimerLabel etl;
+		JLabel daXLabel, daYLabel;
+		JLabel objectXLabel, objectYLabel;
+		
+		public StatusPanel() {
+			setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK), "System Status"));
+			setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+			
+			etl = new ElapsedTimerLabel();
+			daXLabel = new JLabel();
+			daYLabel = new JLabel();
+			objectXLabel = new JLabel();
+			objectYLabel = new JLabel();
+			
+			add(etl);
+			add(new JLabel("DA_WIDTH: " + osp.DA_WIDTH));
+			add(new JLabel("DA_HEIGHT: " + osp.DA_HEIGHT));
+			add(daXLabel);
+			add(daYLabel);
+			add(objectXLabel);
+			add(objectYLabel);
+			
+			new Thread(new StatusUpdatingTask()).start();
+		}
+		
+		public void close() {
+			etl.stop();
+			isRunning = false;
+		}
+		
+		class StatusUpdatingTask implements Runnable {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				while(true) {
+					if(!isRunning) {
+						return;
+					}
+					daXLabel.setText("daX: " + Integer.toString(osp.getDaX()));
+					daYLabel.setText("daY: " + Integer.toString(osp.getDaY()));
+					objectXLabel.setText("objectX: " + Integer.toString(object.getPosX()));
+					objectYLabel.setText("objectY: " + Integer.toString(object.getPosY()));
+				}
+			}
+		}
+		
+		class ElapsedTimerLabel extends JLabel {
+			long startTime;
+			boolean stateRunning;
+			
+			public ElapsedTimerLabel() {
+				setText("0.0 sec");
+				stateRunning = false;
+			}
+			
+			public void start() {
+				if(!stateRunning) {
+					startTime = System.currentTimeMillis();
+					stateRunning = true;
+					new Thread(new ElapsedTimerUpdatingTask()).start();
+				}
+			}
+			
+			public void stop() {
+				if(stateRunning) {
+					stateRunning = false;
+				}
+			}
+			
+			class ElapsedTimerUpdatingTask implements Runnable {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					while(true) {
+						if(!stateRunning) {
+							return;
+						}
+						
+						long currentTime = System.currentTimeMillis();
+						long diffTime = currentTime - startTime;
+						long second = diffTime / 1000;
+						long millsecond = diffTime % 1000;
+						setText(second + "." + millsecond + " sec");
+					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
+		if(e.getActionCommand().equals("generate destination")) {
+			System.out.println("click button");
 		}
 	}
 }
