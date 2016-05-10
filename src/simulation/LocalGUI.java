@@ -3,7 +3,7 @@ package simulation;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.PrintWriter;
@@ -24,6 +24,7 @@ public class LocalGUI {
 	java.util.Timer positionUpdatingTimer = null;
 	
 	JPanel objPanel;
+	ObjectScenePanel osp;
 	
 	// frame per second
 	static final int fps = 50;
@@ -32,7 +33,6 @@ public class LocalGUI {
 		this.object = object;
 		this.commandSender = commandSender;
 		
-		
 		createAndShowGUI();
 		
 		TimerTask positionUpdatingTask = new TimerTask() {
@@ -40,6 +40,7 @@ public class LocalGUI {
 			public void run() {
 				// TODO Auto-generated method stub
 				label.setText(Integer.toString(object.getPosX()) + ", " + Integer.toString(object.getPosY()));
+				osp.repaint();
 			}
 		};
 		positionUpdatingTimer = new java.util.Timer();
@@ -64,11 +65,8 @@ public class LocalGUI {
 		frame.setLayout(layout);
 		
 		// Object drawing panel
-		objPanel = new JPanel();
-		objPanel.setPreferredSize(new Dimension(800, 600));
-		objPanel.setBorder(BorderFactory.createLineBorder(Color.black));
-		
-		frame.add(objPanel);
+		osp = new ObjectScenePanel();
+		frame.add(osp);
 		
 		label = new JLabel();
 		label.setText(Integer.toString(object.getPosX()));
@@ -77,6 +75,30 @@ public class LocalGUI {
 		
 		frame.pack();
 		frame.setVisible(true);
+	}
+	
+	class ObjectScenePanel extends JPanel {
+		// panel size
+		static final int WIDTH = 800;
+		static final int HEIGHT = 600;
+		
+		public ObjectScenePanel() {
+			setBackground(Color.white);
+			setBorder(BorderFactory.createLineBorder(Color.black));
+		}
+		
+		public Dimension getPreferredSize() {
+			return new Dimension(WIDTH, HEIGHT);
+		}
+		
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			
+			g.setColor(Color.RED);
+			g.fillRect(object.getPosX(), object.getPosY(), Object.WIDTH, Object.HEIGHT);
+			g.setColor(Color.BLACK);
+			g.drawRect(object.getPosX(), object.getPosY(), Object.WIDTH, Object.HEIGHT);
+		}
 	}
 	
 	class ControlListener implements KeyListener {
