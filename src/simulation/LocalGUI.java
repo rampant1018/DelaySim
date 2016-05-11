@@ -76,16 +76,21 @@ public class LocalGUI extends JFrame implements ActionListener {
 		osp = new ObjectScenePanel();
 		add(osp);
 		
+		// Right container(panel)
+		JPanel rightPanel = new JPanel();
+		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+		add(rightPanel);
+		
 		// Status panel
 		sp = new StatusPanel();
-		add(sp);
-		
+		rightPanel.add(sp);
+
 		// Destination generate button
 		JButton btn = new JButton("Generate Destination");
 		btn.setActionCommand("generate destination");
 		btn.addActionListener(this);
-		add(btn);
-		
+		rightPanel.add(btn);
+
 		pack();
 		setVisible(true);
 	}
