@@ -16,7 +16,7 @@ public class RemoteApp {
 	static final int rtpRemotePortNumber = 16386; // remote site(this app)
 	
 	static final int positionSendingPeriod = 10;
-	static final int defaultPositionSendingDelay = 500; // position feedback delay (ms)
+	static final int defaultPositionSendingDelay = 130; // position feedback delay (ms)
 	
 	static java.util.Timer positionSendingTimer = null;
 	static SceneSender ss = null;
@@ -69,7 +69,7 @@ public class RemoteApp {
 				return false;
 			}
 			
-			if(cmd1.equals("cd") && scanner.hasNext()) { // change direction
+			if(cmd1.equals("cd")) { // change direction
 				if(!scanner.hasNext()) {
 					System.out.println("Missing arguments: cd args");
 				}
@@ -92,6 +92,40 @@ public class RemoteApp {
 					PositionSendingTask pst = new PositionSendingTask(delay / positionSendingPeriod);
 					positionSendingTimer = new java.util.Timer();
 					positionSendingTimer.scheduleAtFixedRate(pst, 0, positionSendingPeriod);
+				}
+			}
+			else if(cmd1.equals("enable")) {
+				if(!scanner.hasNext()) {
+					System.out.println("Missing arguments: enable args");
+				}
+				else {
+					String arg = scanner.next();
+					if(arg.equals("TAP")) {
+						os.enableTAP();
+					}
+					else if(arg.equals("SPP")) {
+						os.enableSPP();
+					}
+					else {
+						System.out.println("Error arguments: enable [TAP/SPP]");
+					}
+				}
+			}
+			else if(cmd1.equals("disable")) {
+				if(!scanner.hasNext()) {
+					System.out.println("Missing arguments: disable args");
+				}
+				else {
+					String arg = scanner.next();
+					if(arg.equals("TAP")) {
+						os.disableTAP();
+					}
+					else if(arg.equals("SPP")) {
+						os.disableSPP();
+					}
+					else {
+						System.out.println("Error arguments: disable [TAP/SPP]");
+					}
 				}
 			}
 			else {
@@ -161,6 +195,12 @@ class ObjectScene {
 	boolean taLeftFlag;
 	boolean taTopFlag;
 	boolean taBottomFlag;
+	
+	int taLastStopX;
+	int taLastStopY;
+	int taLastHorizontal;
+	int taLastVertical;
+	
 	int taRightBound;
 	int taLeftBound;
 	int taTopBound;
@@ -196,6 +236,22 @@ class ObjectScene {
 	
 	public int getPosY() {
 		return posY;
+	}
+	
+	public void enableTAP() {
+		enableTAP = true;
+	}
+	
+	public void disableTAP() {
+		enableTAP = false;
+	}
+	
+	public void enableSPP() {
+		enableSPP = true;
+	}
+	
+	public void disableSPP() {
+		enableSPP = false;
 	}
 	
 	public void changeDirection(String command) {
@@ -234,7 +290,15 @@ class ObjectScene {
 		posY = 0;
 		direction = 0x0;
 		step_length = 1;
-		step_period = 10;
+		step_period = 5;
+		
+		taTopFlag = false;
+		taBottomFlag = false;
+		taLeftFlag = false;
+		taRightFlag = false;
+		
+		taLastHorizontal = STOP;
+		taLastVertical = STOP;
 		
 		enableTAP = false;
 		enableSPP = false;
@@ -246,10 +310,66 @@ class ObjectScene {
 	
 	private void updateDirection(int d, boolean enable) {
 		if(enable) {
+			taUpdateTABound(d);
 			direction |= d;
 		}
 		else {
+			taUpdateLastAction(d);
 			direction &= ~d;
+		}
+	}
+	
+	private void taUpdateTABound(int d) {
+		switch(d) {
+		case LEFT:
+			if(taLastHorizontal == RIGHT) {
+				taRightFlag = true;
+				taRightBound = taLastStopX + OBJECT_WIDTH;
+				System.out.println("taRightBound = " + taRightBound);
+			}
+			break;
+		case RIGHT:
+			if(taLastHorizontal == LEFT) {
+				taLeftFlag = true;
+				taLeftBound = taLastStopX;
+				System.out.println("taLeftBound = " + taLeftBound);
+			}
+			break;
+		case UP:
+			if(taLastVertical == DOWN) {
+				taBottomFlag = true;
+				taBottomBound = taLastStopY + OBJECT_HEIGHT;
+				System.out.println("taBottomBound = " + taBottomBound);
+			}
+			break;
+		case DOWN:
+			if(taLastVertical == UP) {
+				taTopFlag = true;
+				taTopBound = taLastStopY;
+				System.out.println("taTopBound = " + taTopBound);
+			}
+			break;
+		}
+	}
+	
+	private void taUpdateLastAction(int d) {
+		switch(d) {
+		case LEFT:
+			taLastHorizontal = LEFT;
+			taLastStopX = posX;
+			break;
+		case RIGHT:
+			taLastHorizontal = RIGHT;
+			taLastStopX = posX;
+			break;
+		case UP:
+			taLastVertical = UP;
+			taLastStopY = posY;
+			break;
+		case DOWN:
+			taLastVertical = DOWN;
+			taLastStopY = posY;
+			break;
 		}
 	}
 	
@@ -262,6 +382,9 @@ class ObjectScene {
 			}
 			
 			// Todo: Target Area Predictor
+			if(enableTAP && !taBoundaryCheck()) {
+				return;
+			}
 			
 			// Todo: Stop Point Predictor
 			
@@ -285,21 +408,39 @@ class ObjectScene {
 		}
 		
 		boolean boundaryCheck() {
-			if((direction & LEFT) == LEFT && posX - step_length >= LEFT_BOUND) {
-				return true;
+			if((direction & LEFT) == LEFT && posX - step_length < LEFT_BOUND) {
+				return false;
 			}
-			else if((direction & RIGHT) == RIGHT && posX + step_length <= RIGHT_BOUND - OBJECT_WIDTH) {
-				return true;
-			}
-			
-			if((direction & UP) == UP && posY - step_length >= TOP_BOUND) {
-				return true;
-			}
-			else if((direction & DOWN) == DOWN && posY + step_length <= BOTTOM_BOUND - OBJECT_HEIGHT) {
-				return true;
+			else if((direction & RIGHT) == RIGHT && posX + step_length > RIGHT_BOUND - OBJECT_WIDTH) {
+				return false;
 			}
 			
-			return false;
+			if((direction & UP) == UP && posY - step_length < TOP_BOUND) {
+				return false;
+			}
+			else if((direction & DOWN) == DOWN && posY + step_length > BOTTOM_BOUND - OBJECT_HEIGHT) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		boolean taBoundaryCheck() {
+			if((direction & LEFT) == LEFT && taLeftFlag && posX - step_length < taLeftBound) {
+				return false;
+			}
+			else if((direction & RIGHT) == RIGHT && taRightFlag && posX + step_length > taRightBound - OBJECT_WIDTH) {
+				return false;
+			}
+			
+			if((direction & UP) == UP && taTopFlag & posY - step_length < taTopBound) {
+				return false;
+			}
+			else if((direction & DOWN) == DOWN && taBottomFlag && posY + step_length > taBottomBound - OBJECT_HEIGHT) {
+				return false;
+			}
+			
+			return true;
 		}
 	}
 }
