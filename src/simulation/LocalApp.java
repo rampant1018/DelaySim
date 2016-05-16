@@ -85,8 +85,25 @@ class SceneReceiver implements RTPAppIntf {
 	
 	Object object = null;
 	
+	PrintWriter writerX = null;
+	PrintWriter writerY = null;
+	
+	long start = 0;
+	
 	/** A minimal constructor */
 	public SceneReceiver(String hostname, int rtpLocalPortNumber, int rtpRemotePortNumber, Object object) {
+		try {
+			start = System.currentTimeMillis();
+			writerX = new PrintWriter("pos_x.txt", "UTF-8");
+			writerY = new PrintWriter("pos_y.txt", "UTF-8");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		System.out.print("Initializing rtp session ... ");
 		
 		try {
@@ -123,6 +140,10 @@ class SceneReceiver implements RTPAppIntf {
 		object.setPosX(scanner.nextInt());
 		object.setPosY(scanner.nextInt());
 		scanner.close();
+		
+		long current = System.currentTimeMillis();
+		writerX.println((current - start) + ", " + object.getPosX());
+		writerY.println((current - start) + ", " + object.getPosY());
 	}
 
 	@Override
@@ -138,6 +159,8 @@ class SceneReceiver implements RTPAppIntf {
 	}
 	
 	public void close() {
+		writerX.close();
+		writerY.close();
 		rtpSession.endSession();
 	}
 }
