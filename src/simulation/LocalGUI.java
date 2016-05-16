@@ -12,6 +12,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.PrintWriter;
+import java.util.Random;
 import java.util.TimerTask;
 
 import javax.swing.BorderFactory;
@@ -20,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 
 public class LocalGUI extends JFrame implements ActionListener {
@@ -90,6 +92,12 @@ public class LocalGUI extends JFrame implements ActionListener {
 		btn.setActionCommand("generate destination");
 		btn.addActionListener(this);
 		rightPanel.add(btn);
+		
+		// Destination enable/disable toggle button
+		JToggleButton tbtn = new JToggleButton("DA Display", false);
+		tbtn.setActionCommand("da toggle");
+		tbtn.addActionListener(this);
+		rightPanel.add(tbtn);
 
 		pack();
 		setVisible(true);
@@ -101,8 +109,8 @@ public class LocalGUI extends JFrame implements ActionListener {
 		static final int HEIGHT = 600;
 		
 		// destination area
-		static final int DA_WIDTH = 50;
-		static final int DA_HEIGHT = 50;
+		static final int DA_WIDTH = 30;
+		static final int DA_HEIGHT = 30;
 		boolean daEnable;
 		int daX, daY;
 		
@@ -135,8 +143,9 @@ public class LocalGUI extends JFrame implements ActionListener {
 			
 			// paint destination area
 			if(daEnable) {
-				g.setColor(Color.CYAN);
+				g.setColor(Color.BLUE);
 				g.drawRect(daX, daY, DA_WIDTH, DA_HEIGHT);
+				g.drawRect(daX + 1, daY + 1, DA_WIDTH - 2, DA_HEIGHT - 2);
 			}
 		}
 		
@@ -340,7 +349,21 @@ public class LocalGUI extends JFrame implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 		if(e.getActionCommand().equals("generate destination")) {
-			System.out.println("click button");
+			Random random = new Random();
+			
+			osp.setDaX(random.nextInt(ObjectScenePanel.WIDTH - ObjectScenePanel.DA_WIDTH));
+			osp.setDaY(random.nextInt(ObjectScenePanel.HEIGHT- ObjectScenePanel.DA_HEIGHT));
+		}
+		else if(e.getActionCommand().equals("da toggle")) {
+			JToggleButton tbtn = (JToggleButton)e.getSource();
+			if(tbtn.isSelected()) {
+				tbtn.setText("DA Displaying");
+				osp.enableDA();
+			}
+			else {
+				tbtn.setText("DA Display");
+				osp.disableDA();
+			}
 		}
 	}
 	
