@@ -16,7 +16,7 @@ public class RemoteApp {
 	static final int rtpRemotePortNumber = 16386; // remote site(this app)
 	
 	static final int positionSendingPeriod = 10;
-	static final int defaultPositionSendingDelay = 130; // position feedback delay (ms)
+	static final int defaultPositionSendingDelay = 500; // position feedback delay (ms)
 	
 	static java.util.Timer positionSendingTimer = null;
 	static SceneSender ss = null;
@@ -207,9 +207,11 @@ class ObjectScene {
 	int taBottomBound;
 	
 	// Stop Point(SP) Predictor variables
-	boolean spSet;
+	boolean spSetX;
+	boolean spSetY;
 	int spPredictedX;
 	int spPredictedY;
+	boolean spInRange;
 	
 	java.util.Timer sceneUpdatingTimer = null;
 	
@@ -292,6 +294,7 @@ class ObjectScene {
 		step_length = 1;
 		step_period = 5;
 		
+		// TAP
 		taTopFlag = false;
 		taBottomFlag = false;
 		taLeftFlag = false;
@@ -299,6 +302,11 @@ class ObjectScene {
 		
 		taLastHorizontal = STOP;
 		taLastVertical = STOP;
+		
+		// SPP
+		spSetX = false;
+		spSetY = false;
+		spInRange = false;
 		
 		enableTAP = false;
 		enableSPP = false;
@@ -310,7 +318,8 @@ class ObjectScene {
 	
 	private void updateDirection(int d, boolean enable) {
 		if(enable) {
-			taUpdateTABound(d);
+			taUpdateBound(d);
+			spUpdatePredicted(d);
 			direction |= d;
 		}
 		else {
@@ -319,7 +328,7 @@ class ObjectScene {
 		}
 	}
 	
-	private void taUpdateTABound(int d) {
+	private void taUpdateBound(int d) {
 		switch(d) {
 		case LEFT:
 			if(taLastHorizontal == RIGHT) {
@@ -373,6 +382,43 @@ class ObjectScene {
 		}
 	}
 	
+	private void spUpdatePredicted(int d) {
+		switch(d) {
+		case LEFT:
+			if(taLastHorizontal == RIGHT) {
+				spSetX = true;
+				spPredictedX = taLastStopX + OBJECT_WIDTH / 2 - (500 / step_period) * step_length;
+				System.out.println("taLastStopX = " + taLastStopX);
+				System.out.println("spPredictedX = " + spPredictedX);
+			}
+			break;
+		case RIGHT:
+			if(taLastHorizontal == LEFT) {
+				spSetX = true;
+				spPredictedX = taLastStopX + OBJECT_WIDTH / 2 + (500 / step_period) * step_length;
+				System.out.println("taLastStopX = " + taLastStopX);
+				System.out.println("spPredictedX = " + spPredictedX);
+			}
+			break;
+		case UP:
+			if(taLastVertical == DOWN) {
+				spSetY = true;
+				spPredictedY = taLastStopY + OBJECT_HEIGHT / 2 - (500 / step_period) * step_length;
+				System.out.println("taLastStopY = " + taLastStopY);
+				System.out.println("spPredictedY = " + spPredictedY);
+			}
+			break;
+		case DOWN:
+			if(taLastVertical == UP) {
+				spSetY = true;
+				spPredictedY = taLastStopY + OBJECT_HEIGHT / 2 + (500 / step_period) * step_length;
+				System.out.println("taLastStopY = " + taLastStopY);
+				System.out.println("spPredictedY = " + spPredictedY);
+			}
+			break;
+		}
+	}
+	
 	private class SceneUpdatingTask extends TimerTask {
 		@Override
 		public void run() {
@@ -389,6 +435,27 @@ class ObjectScene {
 			// Todo: Stop Point Predictor
 			
 			move();
+			
+			if(enableSPP) {
+				if(spInRange) {
+					if(!spPredictedCheck()) {
+						System.out.println("exit range");
+						sceneUpdatingTimer.cancel();
+						sceneUpdatingTimer = new java.util.Timer();
+						sceneUpdatingTimer.scheduleAtFixedRate(new SceneUpdatingTask(), 0, step_period);
+						spInRange = false;
+					}
+				}
+				else {
+					if(spPredictedCheck()) {
+						System.out.println("enter range");
+						sceneUpdatingTimer.cancel();
+						sceneUpdatingTimer = new java.util.Timer();
+						sceneUpdatingTimer.scheduleAtFixedRate(new SceneUpdatingTask(), 0, step_period * 2);
+						spInRange = true;
+					}
+				}
+			}
 		}
 		
 		void move() {
@@ -441,6 +508,34 @@ class ObjectScene {
 			}
 			
 			return true;
+		}
+		
+		boolean spPredictedCheck() {
+			final int range = 30;
+			
+			if((direction & LEFT) == LEFT && spSetX) {
+				if(posX + OBJECT_WIDTH / 2 < spPredictedX + range && posX + OBJECT_WIDTH / 2 > spPredictedX - range) {
+					return true;
+				}
+			}
+			else if((direction & RIGHT) == RIGHT && spSetX) {
+				if(posX - OBJECT_WIDTH / 2 < spPredictedX + range && posX - OBJECT_WIDTH / 2 > spPredictedX - range) {
+					return true;
+				}
+			}
+			
+			if((direction & UP) == UP && spSetY) {
+				if(posY + OBJECT_HEIGHT / 2 < spPredictedY + range && posY + OBJECT_HEIGHT / 2 > spPredictedY - range) {
+					return true;
+				}
+			}
+			else if((direction & DOWN) == DOWN && spSetY) {
+				if(posY - OBJECT_HEIGHT / 2 < spPredictedY + range && posY - OBJECT_HEIGHT / 2 > spPredictedY - range) {
+					return true;
+				}
+			}
+			
+			return false;
 		}
 	}
 }
