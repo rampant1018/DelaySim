@@ -1,4 +1,4 @@
-package simulation;
+package local;
 
 import java.io.*;
 import java.net.*;

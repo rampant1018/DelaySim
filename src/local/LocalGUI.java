@@ -1,4 +1,4 @@
-package simulation;
+package local;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -67,8 +67,6 @@ public class LocalGUI extends JFrame implements ActionListener {
 		setTitle("LocalApp");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		
-		setFont(new Font("Arial", 0, 20));
 		
 		// Layout setting
 		FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 10, 10);
@@ -351,8 +349,11 @@ public class LocalGUI extends JFrame implements ActionListener {
 		if(e.getActionCommand().equals("generate destination")) {
 			Random random = new Random();
 			
-			osp.setDaX(random.nextInt(ObjectScenePanel.WIDTH - ObjectScenePanel.DA_WIDTH));
-			osp.setDaY(random.nextInt(ObjectScenePanel.HEIGHT- ObjectScenePanel.DA_HEIGHT));
+			//osp.setDaX(random.nextInt(ObjectScenePanel.WIDTH - ObjectScenePanel.DA_WIDTH));
+			//osp.setDaY(random.nextInt(ObjectScenePanel.HEIGHT- ObjectScenePanel.DA_HEIGHT));
+			
+			osp.setDaX(400);
+			osp.setDaY(300);
 		}
 		else if(e.getActionCommand().equals("da toggle")) {
 			JToggleButton tbtn = (JToggleButton)e.getSource();
